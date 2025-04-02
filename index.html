@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>掲示板</title>
+</head>
+<body>
+    <h1>掲示板</h1>
+    <ul id="threadList"></ul>
+
+    <h2>スレッドを作成</h2>
+    <input type="text" id="threadTitle" placeholder="タイトルを入力">
+    <textarea id="firstMessage" placeholder="最初のメッセージ"></textarea>
+    <button onclick="createThread()">スレッドを作成</button>
+
+    <script>
+        async function loadThreads() {
+            let response = await fetch('/threads.json');
+            let threads = await response.json();
+            let threadList = document.getElementById("threadList");
+            threadList.innerHTML = "";
+
+            threads.forEach((thread, index) => {
+                let li = document.createElement("li");
+                let a = document.createElement("a");
+                a.href = `thread.html?id=${index}`;
+                a.textContent = thread.title;
+                li.appendChild(a);
+                threadList.appendChild(li);
+            });
+        }
+
+        async function createThread() {
+            let title = document.getElementById("threadTitle").value;
+            let message = document.getElementById("firstMessage").value;
+            if (!title || !message) {
+                alert("タイトルと最初の投稿を入力してね！");
+                return;
+            }
+
+            let response = await fetch('/threads.json');
+            let threads = await response.json();
+            threads.push({ title, posts: [{ name: "管理人", message }] });
+
+            await fetch('/.netlify/functions/update', {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(threads)
+            });
+
+            alert("スレッド作成完了！");
+            loadThreads();
+        }
+
+        document.addEventListener("DOMContentLoaded", loadThreads);
+    </script>
+</body>
+</html>
